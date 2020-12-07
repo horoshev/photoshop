@@ -9,8 +9,6 @@ using Microsoft.Win32;
 using Photoshop.Core;
 using Photoshop.Filters;
 using Photoshop.Filters.Parameters;
-using Photoshop.ML;
-using Photoshop.ML.Activation;
 
 namespace Photoshop
 {
@@ -22,6 +20,7 @@ namespace Photoshop
         private bool _isSourceImageVisible = true;
         private bool _isRowHeightAuto = false;
         private string _imagePath = "Resources/cat.jpg";
+        private string _status = "Ready";
         private List<IFilter> _filters = Enumerable.Empty<IFilter>().ToList();
 
         public bool IsHeightAuto
@@ -44,7 +43,18 @@ namespace Photoshop
             }
         }
 
+        public string ApplicationStatus
+        {
+            get => _status;
+            private set
+            {
+                _status = value;
+                OnPropertyChanged(nameof(ApplicationStatus));
+            }
+        }
+
         public BitmapImage Bitmap { get; set; }
+        private BitmapImage DefaultBitmap { get; set; }
 
         public List<IFilter> Filters
         {
@@ -92,6 +102,7 @@ namespace Photoshop
             // Open Default Image
             if (Resources["DefaultImage"] is BitmapImage bitmap)
             {
+                DefaultBitmap = bitmap;
                 Bitmap = bitmap;
             }
         }
@@ -105,21 +116,43 @@ namespace Photoshop
                 ImagePath = fileDialog.FileName;
                 Bitmap = new BitmapImage(new Uri(ImagePath));
                 SourceImage.Source = Bitmap;
+                ProcessedImage.Source = null;
+
+                ApplicationStatus = $"Opened image: {ImagePath}";
             }
         }
 
         private void OnSaveImage(object sender, RoutedEventArgs e)
         {
+            if (ProcessedImage.Source is null)
+            {
+                ApplicationStatus = "There is no image to save";
+                return;
+            }
+
             var fileDialog = new SaveFileDialog();
 
             if (fileDialog.ShowDialog() is true)
             {
                 using var file = fileDialog.OpenFile();
                 var encoder = new JpegBitmapEncoder();
-                var frame = BitmapFrame.Create(SourceImage.Source as WriteableBitmap);
+                var frame = BitmapFrame.Create(ProcessedImage.Source as WriteableBitmap);
                 encoder.Frames.Add(frame);
                 encoder.Save(file);
             }
+        }
+
+        private void OnOpenDefaultImage(object sender, RoutedEventArgs e)
+        {
+            SourceImage.Source = DefaultBitmap;
+            Bitmap = DefaultBitmap;
+
+            ProcessedImage.Source = null;
+        }
+
+        private void OnExit(object sender, RoutedEventArgs e)
+        {
+            Environment.Exit(0);
         }
 
         private void OnFilterChanged(object sender, RoutedEventArgs e)
@@ -160,18 +193,8 @@ namespace Photoshop
         private void OnResetButtonClick(object sender, RoutedEventArgs e)
         {
             CreateFilterControls();
-        }
 
-        private void OnTestButtonClick(object sender, RoutedEventArgs e)
-        {
-            var layer = new NeuronsLayer<SigmoidActivation>(4, 2, new SigmoidActivation(0.7));
-            var network = NeuralNetwork.Build(4)
-                .Add(layer)
-                .Compile();
-
-            var output = network.Predict(new [,] {{.0, 1, 2, 3}});
-
-            Console.WriteLine(output);
+            ProcessedImage.Source = null;
         }
 
         private void CreateFilterControls()

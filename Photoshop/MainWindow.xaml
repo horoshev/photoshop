@@ -80,7 +80,9 @@
                 <MenuItem Header="Open Image" Click="OnOpenImage" />
                 <MenuItem Header="Save Image" Click="OnSaveImage" />
                 <Separator />
-                <MenuItem Header="Exit" />
+                <MenuItem Header="Open Default Image" Click="OnOpenDefaultImage" />
+                <Separator />
+                <MenuItem Header="Exit" Click="OnExit"/>
             </MenuItem>
             <MenuItem Header="Layout">
                 <MenuItem Header="Show Source Image" IsChecked="{Binding IsSourceImageVisible}" IsCheckable="True"/>
@@ -142,11 +144,6 @@
                                 Padding="10 5" 
                                 HorizontalAlignment="Center"
                                 Click="OnResetButtonClick">Сбросить</Button>
-                        
-                        <Button Grid.Column="3" 
-                                Padding="10 5" 
-                                HorizontalAlignment="Center"
-                                Click="OnTestButtonClick">Test</Button>
                     
                     </Grid>
                 </StackPanel>
@@ -155,7 +152,7 @@
         
         <StatusBar Grid.Row="2">
             <StatusBarItem>
-                <TextBlock Text="{Binding Path=ImagePath, Mode=OneWay}" />
+                <TextBlock Text="{Binding Path=ApplicationStatus, Mode=OneWay}" />
             </StatusBarItem>
         </StatusBar>
         
